@@ -1,32 +1,34 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter } from "react-router-dom";
 
-import { Layout } from '@components/Layout';
-import { HomePage } from '@pages/HomePage';
-import { ProductsListPage } from '@features/products/pages/ProductsListPage';
-import { CategoriesListPage } from '@features/products/pages/CategoriesListPage';
-import { CreateProductPage } from '@features/products/pages/CreateProductPage';
+import { Layout } from "@components/Layout";
+import { CategoriesListPage } from "@features/products/pages/CategoriesListPage";
+import { CreateProductPage } from "@features/products/pages/CreateProductPage";
+import { ProductsListPage } from "@features/products/pages/ProductsListPage";
+import { HomePage } from "@pages/HomePage";
 
-type Route = Record<
-  string,
-  {
-    path: string;
-    title: string;
-    dynamicPath?: (id: string) => string;
-  }
->;
+import AuthControls from "@components/AuthControls/AuthControls";
+import CounterDisplay from "@components/CounterDisplay/CounterDisplay";
 
-export const Route: Route = {
+type RouteEntry = {
+  path: string;
+  title: string;
+  dynamicPath?: (id: string) => string;
+};
+
+type RouteMap = Record<string, RouteEntry>;
+
+export const Route: RouteMap = {
   HOME: {
-    path: '/',
-    title: 'Home',
+    path: "/",
+    title: "Home",
   },
   PRODUCTS_LIST: {
-    path: '/products',
-    title: 'Products',
+    path: "/products",
+    title: "Products",
   },
   CATEGORIES_LIST: {
-    path: '/categories',
-    title: 'Categories',
+    path: "/categories",
+    title: "Categories",
   },
   // PRODUCTS_DETAILS: {
   //   path: '/products/:id',
@@ -34,8 +36,17 @@ export const Route: Route = {
   //   dynamicPath: (id: ProductDto['id']) => `/products/${id}`,
   // },
   CREATE_PRODUCT: {
-    path: '/products/create',
-    title: 'Create product',
+    path: "/products/create",
+    title: "Create product",
+  },
+  // New routes for the Context API demo components
+  CONTEXT_COUNTER_DEMO: {
+    path: "/context-counter",
+    title: "Context Counter Demo",
+  },
+  CONTEXT_AUTH_DEMO: {
+    path: "/context-auth",
+    title: "Context Auth Demo",
   },
 } as const;
 
@@ -63,6 +74,14 @@ export const router = createBrowserRouter([
       {
         path: Route.CREATE_PRODUCT.path,
         element: <CreateProductPage />,
+      },
+      {
+        path: Route.CONTEXT_COUNTER_DEMO.path,
+        element: <CounterDisplay />,
+      },
+      {
+        path: Route.CONTEXT_AUTH_DEMO.path,
+        element: <AuthControls />,
       },
     ],
   },
