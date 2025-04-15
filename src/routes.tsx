@@ -9,6 +9,10 @@ import { HomePage } from "@pages/HomePage";
 import AuthControls from "@components/AuthControls/AuthControls";
 import CounterDisplay from "@components/CounterDisplay/CounterDisplay";
 
+import DataFetchingDemo from "@components/DataFetchingDemo/DataFetchingDemo";
+import UndoDemo from "@components/UndoDemo/UndoDemo";
+import WebWorkerDemo from "@components/WebWorkerDemo/WebWorkerDemo";
+
 type RouteEntry = {
   path: string;
   title: string;
@@ -30,16 +34,11 @@ export const Route: RouteMap = {
     path: "/categories",
     title: "Categories",
   },
-  // PRODUCTS_DETAILS: {
-  //   path: '/products/:id',
-  //   title: 'Products details',
-  //   dynamicPath: (id: ProductDto['id']) => `/products/${id}`,
-  // },
   CREATE_PRODUCT: {
     path: "/products/create",
     title: "Create product",
   },
-  // New routes for the Context API demo components
+  // Context API demo routes
   CONTEXT_COUNTER_DEMO: {
     path: "/context-counter",
     title: "Context Counter Demo",
@@ -47,6 +46,19 @@ export const Route: RouteMap = {
   CONTEXT_AUTH_DEMO: {
     path: "/context-auth",
     title: "Context Auth Demo",
+  },
+  // Hook demo routes
+  DATA_FETCHING_DEMO: {
+    path: "/hook-demo/data-fetching",
+    title: "useDataFetching Demo",
+  },
+  UNDO_DEMO: {
+    path: "/hook-demo/undo",
+    title: "useUndo Demo",
+  },
+  WEB_WORKER_DEMO: {
+    path: "/hook-demo/web-worker",
+    title: "useWebWorker Demo",
   },
 } as const;
 
@@ -75,6 +87,7 @@ export const router = createBrowserRouter([
         path: Route.CREATE_PRODUCT.path,
         element: <CreateProductPage />,
       },
+      // Context Demo Routes
       {
         path: Route.CONTEXT_COUNTER_DEMO.path,
         element: <CounterDisplay />,
@@ -82,6 +95,19 @@ export const router = createBrowserRouter([
       {
         path: Route.CONTEXT_AUTH_DEMO.path,
         element: <AuthControls />,
+      },
+      // New Hook Demo Routes
+      {
+        path: Route.DATA_FETCHING_DEMO.path,
+        element: <DataFetchingDemo />,
+      },
+      {
+        path: Route.UNDO_DEMO.path,
+        element: <UndoDemo />,
+      },
+      {
+        path: Route.WEB_WORKER_DEMO.path,
+        element: <WebWorkerDemo />,
       },
     ],
   },

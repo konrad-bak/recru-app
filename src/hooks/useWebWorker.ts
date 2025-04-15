@@ -70,40 +70,75 @@ export function useWebWorker<WorkerInput, WorkerResult>(
   });
 
   const workerRef = useRef<Worker | null>(null);
-  // Ref to store the stringified function or script path
   const sourceRef = useRef(fnOrScriptPath);
-  sourceRef.current = fnOrScriptPath; // Keep it updated if the prop changes
+  sourceRef.current = fnOrScriptPath;
 
-  // Effect for worker setup and cleanup
   useEffect(() => {
     let worker: Worker;
-    let objectUrl: string | undefined; // To store blob URL for cleanup
+    let objectUrl: string | undefined;
 
-    const source = sourceRef.current; // Use the ref's current value inside the effect
+    const source = sourceRef.current;
 
     if (typeof source === "function") {
-      // --- Create worker from function using Blob URL ---
       const fnString = source.toString();
 
-      // This code runs inside the worker thread
+      // Attempt to extract the function name (basic regex, might not cover all edge cases)
+      const fnNameMatch = fnString.match(/^function\s*([a-zA-Z0-9_$]+)\s*\(/);
+      const fnName = fnNameMatch ? fnNameMatch[1] : null;
+
+      if (!fnName) {
+        // Cannot reliably use this method with anonymous or arrow functions for recursion
+        console.error(
+          "[useWebWorker] Failed to extract function name. Recursive functions passed directly might not work reliably. Consider using an external script file."
+        );
+        setState((prev) => ({
+          ...prev,
+          error:
+            "Worker function must be a named function for direct passing with recursion.",
+        }));
+        return; // Exit effect
+      }
+
+      console.log(`[useWebWorker] Detected function name: ${fnName}`);
+      console.log("[useWebWorker] Function String:", fnString);
+
+      // Assign the function explicitly to the worker's global scope (self)
+      // And call it via self inside onmessage
       const workerCode = `
+        // Assign the stringified function to a property on 'self' using the extracted name
+        try {
+            self.${fnName} = ${fnString};
+        } catch (e) {
+            // Post an error immediately if the function assignment fails
+            self.postMessage({ type: 'ERROR', payload: 'Failed to define worker function: ' + e.message });
+            // Optional: throw e; // Could terminate the worker initialization here
+        }
+
+        // Set up the message handler
         self.onmessage = async (event) => {
           const inputData = event.data;
           try {
-            // Rehydrate the function (cannot use closures from hook scope)
-            const workFn = (${fnString});
-            const result = await workFn(inputData);
-            // Post result back to main thread
+            // Check if the function exists on self
+            if (typeof self.${fnName} !== 'function') {
+               throw new Error('Worker function (${fnName}) is not defined on self.');
+            }
+            // Call the function via 'self' to ensure correct scope for recursion
+            const result = await self.${fnName}(inputData);
+
+            // Post result back
             self.postMessage({ type: 'RESULT', payload: result });
           } catch (error) {
-            // Post error back to main thread
+            // Post error back
             self.postMessage({
               type: 'ERROR',
-              payload: error instanceof Error ? error.message : 'Worker execution error'
+              payload: error instanceof Error ? error.message : 'Worker execution error: ' + String(error)
             });
           }
         };
       `;
+
+      console.log("[useWebWorker] Worker Code:", workerCode); // Log the generated code
+
       const blob = new Blob([workerCode], { type: "application/javascript" });
       objectUrl = URL.createObjectURL(blob);
       try {
@@ -117,13 +152,12 @@ export function useWebWorker<WorkerInput, WorkerResult>(
           ...prev,
           error: `Failed to create worker: ${err instanceof Error ? err.message : String(err)}`,
         }));
-        if (objectUrl) URL.revokeObjectURL(objectUrl); // Clean up blob URL on creation error
-        return; // Exit effect
+        if (objectUrl) URL.revokeObjectURL(objectUrl);
+        return;
       }
     } else {
       // --- Create worker from script path ---
       try {
-        // Ensure source is a string or URL object for the Worker constructor
         const workerPath = source instanceof URL ? source : String(source);
         worker = new Worker(workerPath);
       } catch (err) {
@@ -135,7 +169,7 @@ export function useWebWorker<WorkerInput, WorkerResult>(
           ...prev,
           error: `Failed to create worker: ${err instanceof Error ? err.message : String(err)}`,
         }));
-        return; // Exit effect
+        return;
       }
     }
 
