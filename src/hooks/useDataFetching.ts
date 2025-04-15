@@ -4,10 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Represents an entry in the data cache.
- * @template T The type of the cached data.
+ * @template DataType The type of the cached data.
  */
-interface CacheEntry<T> {
-  data: T;
+interface CacheEntry<DataType> {
+  data: DataType;
   /** Timestamp (ms since epoch) when the data was fetched. */
   timestamp: number;
   /** Timestamp (ms since epoch) when the cache entry should be considered stale. */
@@ -33,11 +33,11 @@ interface FetchOptions {
 
 /**
  * Represents the state managed by the useDataFetching hook.
- * @template T The type of the fetched data.
+ * @template DataType The type of the fetched data.
  */
-interface FetchState<T> {
+interface FetchState<DataType> {
   /** The fetched data, or null if no data has been fetched or an error occurred initially. */
-  data: T | null;
+  data: DataType | null;
   /** An error object if the fetch failed, otherwise null. */
   error: Error | null;
   /** True if the hook is currently fetching data for the first time (no data or cache available). */
@@ -64,20 +64,20 @@ const pendingRequests = new Map<string, Promise<unknown>>();
 /**
  * Custom hook for fetching data with caching and request deduplication.
  *
- * @template T The expected type of the data to be fetched.
+ * @template DataType The expected type of the data to be fetched.
  * @param {string | null | undefined} url The URL to fetch data from. If null or undefined, the fetch will not be executed.
  * @param {FetchOptions} [options={}] Configuration options for fetching behavior.
- * @returns {FetchState<T> & { refetch: () => Promise<void>; mutate: (newDataOrFn: T | ((currentData: T | null) => T), shouldRevalidate?: boolean) => void; }}
+ * @returns {FetchState<DataType> & { refetch: () => Promise<void>; mutate: (newDataOrFn: DataType | ((currentData: DataType | null) => DataType), shouldRevalidate?: boolean) => void; }}
  *          An object containing the fetch state (`data`, `error`, `isLoading`, `isValidating`)
  *          and functions to manually `refetch` or `mutate` the data.
  */
-export function useDataFetching<T>(
+export function useDataFetching<DataType>(
   url: string | null | undefined,
   options: FetchOptions = {}
-): FetchState<T> & {
+): FetchState<DataType> & {
   refetch: () => Promise<void>;
   mutate: (
-    newDataOrFn: T | ((currentData: T | null) => T),
+    newDataOrFn: DataType | ((currentData: DataType | null) => DataType),
     shouldRevalidate?: boolean // Option to trigger revalidation after mutation
   ) => void;
 } {
@@ -101,11 +101,13 @@ export function useDataFetching<T>(
   const cacheKey = url ?? "__disabled__";
 
   // Initialize state, potentially from cache if URL is valid
-  const [state, setState] = useState<FetchState<T>>(() => {
+  const [state, setState] = useState<FetchState<DataType>>(() => {
     if (!url) {
       return { data: null, error: null, isLoading: false, isValidating: false };
     }
-    const cachedEntry = globalCache.get(cacheKey) as CacheEntry<T> | undefined;
+    const cachedEntry = globalCache.get(cacheKey) as
+      | CacheEntry<DataType>
+      | undefined;
     const now = Date.now();
     if (cachedEntry && now < cachedEntry.expiresAt) {
       // Use valid cached data
@@ -118,7 +120,7 @@ export function useDataFetching<T>(
     }
     // Otherwise, initial state indicates loading (if not manual)
     return {
-      data: (cachedEntry?.data as T) ?? null, // Keep stale data if available
+      data: (cachedEntry?.data as DataType) ?? null, // Keep stale data if available
       error: null,
       isLoading: !manual && !cachedEntry, // Loading only if auto-fetch and no cache
       isValidating: false,
@@ -128,7 +130,7 @@ export function useDataFetching<T>(
   // Internal function to perform the actual fetch and update state/cache
   // Wrapped in useCallback for stability
   const performFetch = useCallback(
-    async (_isRefetch = false): Promise<T> => {
+    async (_isRefetch = false): Promise<DataType> => {
       // If URL is invalid, do nothing and return a rejected promise
       if (!url) {
         const error = new Error("Fetch URL is not provided.");
@@ -153,11 +155,11 @@ export function useDataFetching<T>(
           setState((prev) => ({ ...prev, isValidating: true }));
         }
         // Return the existing promise
-        return pendingRequests.get(currentKey)! as Promise<T>;
+        return pendingRequests.get(currentKey)! as Promise<DataType>;
       }
 
       // --- Perform Fetch ---
-      const fetchPromise = (async (): Promise<T> => {
+      const fetchPromise = (async (): Promise<DataType> => {
         const response = await fetch(currentKey);
         if (!response.ok) {
           // Attempt to read error message from response body
@@ -171,7 +173,7 @@ export function useDataFetching<T>(
           }
           throw new Error(errorBody);
         }
-        return (await response.json()) as T;
+        return (await response.json()) as DataType;
       })();
 
       // Store the promise in pending requests
@@ -180,7 +182,7 @@ export function useDataFetching<T>(
       try {
         const result = await fetchPromise;
         const fetchTime = Date.now();
-        const newCacheEntry: CacheEntry<T> = {
+        const newCacheEntry: CacheEntry<DataType> = {
           data: result,
           timestamp: fetchTime,
           expiresAt: fetchTime + cacheTime,
@@ -239,7 +241,7 @@ export function useDataFetching<T>(
       const currentKey = url;
       const now = Date.now();
       const cachedEntry = globalCache.get(currentKey) as
-        | CacheEntry<T>
+        | CacheEntry<DataType>
         | undefined;
 
       // --- Cache Check (Skip if forced refetch) ---
@@ -337,7 +339,9 @@ export function useDataFetching<T>(
   useEffect(() => {
     if (!manual && url) {
       // Check cache status again within the effect to decide initial action
-      const cachedEntry = globalCache.get(url) as CacheEntry<T> | undefined;
+      const cachedEntry = globalCache.get(url) as
+        | CacheEntry<DataType>
+        | undefined;
       const now = Date.now();
 
       if (cachedEntry && now < cachedEntry.expiresAt) {
@@ -414,7 +418,7 @@ export function useDataFetching<T>(
   // Function to manually update the cache and state
   const mutate = useCallback(
     (
-      newDataOrFn: T | ((currentData: T | null) => T),
+      newDataOrFn: DataType | ((currentData: DataType | null) => DataType),
       shouldRevalidate: boolean = false // Default to not revalidating after mutate
     ) => {
       if (!url) {
@@ -424,11 +428,13 @@ export function useDataFetching<T>(
       console.log(`[useDataFetching] Mutating data for: ${url}`);
 
       const currentKey = url;
-      let newData: T;
+      let newData: DataType;
 
       // Determine the new data based on input
       if (typeof newDataOrFn === "function") {
-        const updaterFn = newDataOrFn as (currentData: T | null) => T;
+        const updaterFn = newDataOrFn as (
+          currentData: DataType | null
+        ) => DataType;
         // Use the current state's data for the update function
         // Note: This uses the state at the time mutate is *called*.
         // If more complex updates based on the *absolute latest* cached data are needed,
@@ -439,7 +445,7 @@ export function useDataFetching<T>(
       }
 
       const now = Date.now();
-      const newCacheEntry: CacheEntry<T> = {
+      const newCacheEntry: CacheEntry<DataType> = {
         data: newData,
         timestamp: now, // Treat mutated data as freshly 'fetched'
         expiresAt: now + cacheTime,
