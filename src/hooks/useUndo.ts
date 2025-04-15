@@ -2,36 +2,36 @@ import { useCallback, useReducer } from "react";
 
 /**
  * Interface representing the state managed by the undo reducer.
- * @template T The type of the state being managed.
+ * @template StateType The type of the state being managed.
  */
-interface UndoState<T> {
-  past: T[]; // History of previous states
-  present: T; // The current state
-  future: T[]; // History of states that have been undone (for redo)
+interface UndoState<StateType> {
+  past: StateType[]; // History of previous states
+  present: StateType; // The current state
+  future: StateType[]; // History of states that have been undone (for redo)
 }
 
 // --- Action Types ---
 
 // Discriminated union for reducer actions
-type Action<T> =
+type Action<StateType> =
   | { type: "UNDO" }
   | { type: "REDO" }
-  | { type: "SET"; newPresent: T }
-  | { type: "RESET"; newPresent: T };
+  | { type: "SET"; newPresent: StateType }
+  | { type: "RESET"; newPresent: StateType };
 
 // --- Reducer Function ---
 
 /**
  * Reducer function to manage state with undo/redo capabilities.
- * @template T The type of the state being managed.
- * @param {UndoState<T>} state The current undo state.
- * @param {Action<T>} action The action to perform.
- * @returns {UndoState<T>} The new undo state.
+ * @template StateType The type of the state being managed.
+ * @param {UndoState<StateType>} state The current undo state.
+ * @param {Action<StateType>} action The action to perform.
+ * @returns {UndoState<StateType>} The new undo state.
  */
-const undoReducer = <T>(
-  state: UndoState<T>,
-  action: Action<T>
-): UndoState<T> => {
+const undoReducer = <StateType>(
+  state: UndoState<StateType>,
+  action: Action<StateType>
+): UndoState<StateType> => {
   const { past, present, future } = state;
 
   switch (action.type) {
@@ -99,26 +99,26 @@ const undoReducer = <T>(
 /**
  * A custom hook to manage state with undo/redo functionality.
  *
- * @template T The type of the state to manage.
- * @param {T} initialPresent The initial state value.
+ * @template StateType The type of the state to manage.
+ * @param {StateType} initialPresent The initial state value.
  * @returns {{
- *   state: T; // The current state value
- *   set: (newPresent: T) => void; // Function to set a new state (clears redo history)
- *   reset: (newPresent: T) => void; // Function to reset the state to a new value (clears all history)
+ *   state: StateType; // The current state value
+ *   set: (newPresent: StateType) => void; // Function to set a new state (clears redo history)
+ *   reset: (newPresent: StateType) => void; // Function to reset the state to a new value (clears all history)
  *   undo: () => void; // Function to undo the last change
  *   redo: () => void; // Function to redo the last undone change
  *   canUndo: boolean; // Whether an undo operation is possible
  *   canRedo: boolean; // Whether a redo operation is possible
  * }}
  */
-export function useUndo<T>(initialPresent: T) {
-  const initialState: UndoState<T> = {
+export function useUndo<StateType>(initialPresent: StateType) {
+  const initialState: UndoState<StateType> = {
     past: [],
     present: initialPresent,
     future: [],
   };
 
-  const [state, dispatch] = useReducer(undoReducer<T>, initialState);
+  const [state, dispatch] = useReducer(undoReducer<StateType>, initialState);
 
   // Check if undo/redo actions are possible
   const canUndo = state.past.length > 0;
@@ -134,14 +134,14 @@ export function useUndo<T>(initialPresent: T) {
   }, [dispatch]);
 
   const set = useCallback(
-    (newPresent: T) => {
+    (newPresent: StateType) => {
       dispatch({ type: "SET", newPresent });
     },
     [dispatch]
   );
 
   const reset = useCallback(
-    (newPresent: T) => {
+    (newPresent: StateType) => {
       dispatch({ type: "RESET", newPresent });
     },
     [dispatch]
