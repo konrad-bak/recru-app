@@ -218,7 +218,8 @@ export function useDataFetching<DataType>(
       }
       // Add dependencies for useCallback
     },
-    [url, cacheTime, onError, state.isLoading, state.isValidating]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [url, cacheTime, onError]
   ); // Dependencies ensure the callback updates correctly
 
   // Main data fetching orchestrator logic
@@ -325,14 +326,8 @@ export function useDataFetching<DataType>(
       }
       // Add dependencies for useCallback
     },
-    [
-      url,
-      dedupingInterval,
-      state.data,
-      state.isLoading,
-      state.isValidating,
-      performFetch,
-    ]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [url, dedupingInterval, performFetch]
   ); // state.data helps determine isLoading/isValidating
 
   // Effect to trigger fetch on mount and when url/options change (if not manual)

@@ -1,9 +1,6 @@
 import { createBrowserRouter } from "react-router-dom";
 
 import { Layout } from "@components/Layout";
-import { CategoriesListPage } from "@features/products/pages/CategoriesListPage";
-import { CreateProductPage } from "@features/products/pages/CreateProductPage";
-import { ProductsListPage } from "@features/products/pages/ProductsListPage";
 import { HomePage } from "@pages/HomePage";
 
 import AuthControls from "@components/AuthControls/AuthControls";
@@ -26,18 +23,18 @@ export const Route: RouteMap = {
     path: "/",
     title: "Home",
   },
-  PRODUCTS_LIST: {
-    path: "/products",
-    title: "Products",
-  },
-  CATEGORIES_LIST: {
-    path: "/categories",
-    title: "Categories",
-  },
-  CREATE_PRODUCT: {
-    path: "/products/create",
-    title: "Create product",
-  },
+  // PRODUCTS_LIST: {
+  //   path: "/products",
+  //   title: "Products",
+  // },
+  // CATEGORIES_LIST: {
+  //   path: "/categories",
+  //   title: "Categories",
+  // },
+  // CREATE_PRODUCT: {
+  //   path: "/products/create",
+  //   title: "Create product",
+  // },
   // Context API demo routes
   CONTEXT_COUNTER_DEMO: {
     path: "/context-counter",
@@ -71,22 +68,22 @@ export const router = createBrowserRouter([
         path: Route.HOME.path,
         element: <HomePage />,
       },
-      {
-        path: Route.PRODUCTS_LIST.path,
-        element: <ProductsListPage />,
-      },
-      {
-        path: Route.CATEGORIES_LIST.path,
-        element: <CategoriesListPage />,
-      },
+      // {
+      //   path: Route.PRODUCTS_LIST.path,
+      //   element: <ProductsListPage />,
+      // },
+      // {
+      //   path: Route.CATEGORIES_LIST.path,
+      //   element: <CategoriesListPage />,
+      // },
       // {
       //   path: Route.PRODUCTS_DETAILS.path,
       //   element: <ProductDetailsPage />,
       // },
-      {
-        path: Route.CREATE_PRODUCT.path,
-        element: <CreateProductPage />,
-      },
+      // {
+      //   path: Route.CREATE_PRODUCT.path,
+      //   element: <CreateProductPage />,
+      // },
       // Context Demo Routes
       {
         path: Route.CONTEXT_COUNTER_DEMO.path,
